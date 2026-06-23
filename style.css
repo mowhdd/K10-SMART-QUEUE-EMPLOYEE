@@ -558,13 +558,6 @@ input:focus {
   text-align: center;
 }
 
-@media (max-width: 980px) {
-  .heroSection,
-  .dashboardHero,
-  .customerLayout {
-    grid-template-columns: 1fr;
-  }
-
   .staffPage .dashboardSummary {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     justify-content: stretch;
@@ -574,13 +567,7 @@ input:focus {
     align-items: flex-start;
     flex-direction: column;
   }
-}
 
-@media (max-width: 640px) {
-  .pageShell {
-    width: min(100% - 20px, 100%);
-    padding: 20px 0 28px;
-  }
 
   .heroCopy,
   .heroPanel,
@@ -607,5 +594,148 @@ input:focus {
   .filterChip {
     width: 100%;
     justify-content: center;
+  }
+
+  @media (max-width: 980px) {
+  .heroSection,
+  .dashboardHero,
+  .customerLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .staffPage .dashboardHero {
+    grid-template-columns: 1fr;
+  }
+
+  .staffPage .dashboardHero h1 {
+    max-width: 100%;
+  }
+
+  .staffPage .dashboardSummary {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    justify-content: stretch;
+  }
+
+  .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .pageShell {
+    width: min(100% - 16px, 100%);
+    padding: 12px 0 24px;
+  }
+
+  .heroCopy,
+  .heroPanel,
+  .orderPanel,
+  .dashboardPanel,
+  .dashboardHero {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .heroSection,
+  .dashboardHero {
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .staffPage .dashboardHero {
+    align-items: stretch;
+  }
+
+  h1,
+  .staffPage .dashboardHero h1 {
+    font-size: clamp(2rem, 12vw, 2.8rem);
+    line-height: 1.05;
+  }
+
+  h2 {
+    font-size: 1.55rem;
+  }
+
+  .eyebrow {
+    margin-bottom: 8px;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+  }
+
+  .heroText {
+    margin-top: 12px;
+    font-size: 0.95rem;
+  }
+
+  .menuGrid,
+  .ordersGrid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .heroMeta,
+  .dashboardSummary,
+  .categoryFilters {
+    gap: 8px;
+  }
+
+  .staffPage .dashboardSummary {
+    grid-template-columns: 1fr;
+    margin-top: 4px;
+  }
+
+  .staffPage .summaryChip {
+    min-height: auto;
+    padding: 13px 14px;
+  }
+
+  .heroMeta span,
+  .summaryChip,
+  .filterChip {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sectionHeading {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .orderCard,
+  .menuCard,
+  .selectedItemCard {
+    padding: 16px;
+  }
+
+  .orderCardTop,
+  .menuFooter,
+  .selectedTop,
+  .orderMetaGrid {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .orderMetaGrid {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .pageShell {
+    width: calc(100% - 12px);
+  }
+
+  .heroCopy,
+  .heroPanel,
+  .orderPanel,
+  .dashboardPanel,
+  .dashboardHero {
+    padding: 14px;
+  }
+
+  h1,
+  .staffPage .dashboardHero h1 {
+    font-size: 1.85rem;
   }
 }
