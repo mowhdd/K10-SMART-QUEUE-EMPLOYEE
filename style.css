@@ -739,3 +739,7 @@ input:focus {
     font-size: 1.85rem;
   }
 }
+
+.summaryTitle {
+  margin-bottom: 6px;
+}
