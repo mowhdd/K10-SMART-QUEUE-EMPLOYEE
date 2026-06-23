@@ -78,7 +78,6 @@ function sortOrders(orders) {
 
 function renderOrders() {
   const activeOrders = allOrders.filter((order) => order.status !== "Ready to Serve");
-  const readyOrders = allOrders.filter((order) => order.status === "Ready to Serve");
   const visibleOrders = showLiveQueueOnly ? activeOrders : allOrders;
   const sortedOrders = sortOrders(visibleOrders);
 
@@ -130,12 +129,12 @@ function renderOrders() {
       </div>
       <div class="orderMetaGrid">
         <div>
-          <p class="metaLabel">Table</p>
-          <strong>${order.tableNo}</strong>
-        </div>
-        <div>
           <p class="metaLabel">Quantity</p>
           <strong>${order.quantity}</strong>
+        </div>
+        <div>
+          <p class="metaLabel">Session</p>
+          <strong>${order.customerSessionId ? order.customerSessionId.slice(-4).toUpperCase() : "Walk-in"}</strong>
         </div>
       </div>
       <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
