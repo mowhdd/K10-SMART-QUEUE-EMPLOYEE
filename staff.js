@@ -32,10 +32,7 @@ onSnapshot(ordersQuery, function(snapshot) {
 
 async function markReady(orderId) {
   const orderRef = doc(db, "orders", orderId);
-
-  await updateDoc(orderRef, {
-    status: "Ready to Serve"
-  });
+  await updateDoc(orderRef, { status: "Ready to Serve" });
 }
 
 function getDisplaySequence(order) {
@@ -95,16 +92,11 @@ function renderOrders() {
   ordersList.classList.toggle("helperMode", highlightReadyActions);
 
   if (sortedOrders.length === 0) {
-    const emptyTitle = showLiveQueueOnly ? "The live queue is clear for now." : "No orders found.";
-    const emptyBody = showLiveQueueOnly
-      ? "New customer orders will appear here automatically."
-      : "Try switching back to live queue mode after new orders arrive.";
-
     ordersList.innerHTML = `
       <div class="emptyState">
         <p class="eyebrow">No live orders</p>
-        <h3>${emptyTitle}</h3>
-        <p>${emptyBody}</p>
+        <h3>${showLiveQueueOnly ? "The live queue is clear for now." : "No orders found."}</h3>
+        <p>${showLiveQueueOnly ? "New customer orders will appear here automatically." : "Try switching back to live queue mode after new orders arrive."}</p>
       </div>
     `;
     return;
@@ -118,7 +110,6 @@ function renderOrders() {
 
     const orderCard = document.createElement("article");
     orderCard.className = `orderCard ${highlightReadyActions && !isReady ? "actionFocus" : ""}`;
-
     orderCard.innerHTML = `
       <div class="orderCardTop">
         <div>
@@ -137,18 +128,16 @@ function renderOrders() {
           <strong>${order.customerSessionId ? order.customerSessionId.slice(-4).toUpperCase() : "Walk-in"}</strong>
         </div>
       </div>
+      ${order.remarks ? `<p class="remarksText">Remarks: ${order.remarks}</p>` : ""}
       <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
         ${isReady ? "Marked Ready" : "Ready to Serve"}
       </button>
     `;
 
-    const readyButton = orderCard.querySelector(".readyButton");
-    readyButton.addEventListener("click", async () => {
-      if (isReady) {
-        return;
+    orderCard.querySelector(".readyButton").addEventListener("click", async () => {
+      if (!isReady) {
+        await markReady(order.id);
       }
-
-      await markReady(order.id);
     });
 
     ordersList.appendChild(orderCard);
@@ -163,8 +152,7 @@ liveQueueToggle.addEventListener("click", () => {
 
 sortModeToggle.addEventListener("click", () => {
   sortMode = sortMode === "sequence" ? "newest" : "sequence";
-  const title = sortMode === "sequence" ? "Sequence order" : "Newest orders first";
-  sortModeToggle.querySelector(".summaryTitle").textContent = title;
+  sortModeToggle.querySelector(".summaryTitle").textContent = sortMode === "sequence" ? "Sequence order" : "Newest orders first";
   renderOrders();
 });
 
