@@ -123,12 +123,8 @@ function renderOrders() {
           <p class="metaLabel">Quantity</p>
           <strong>${order.quantity}</strong>
         </div>
-        <div>
-          <p class="metaLabel">Session</p>
-          <strong>${order.customerSessionId ? order.customerSessionId.slice(-4).toUpperCase() : "Walk-in"}</strong>
-        </div>
       </div>
-      ${order.remarks ? `<p class="remarksText">Remarks: ${order.remarks}</p>` : ""}
+      ${order.remarks ? `<p class="remarksText">Remarks: ${order.remarks}</p>` : `<p class="remarksText">Remarks: None</p>`}
       <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
         ${isReady ? "Marked Ready" : "Ready to Serve"}
       </button>
