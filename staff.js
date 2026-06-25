@@ -32,10 +32,7 @@ onSnapshot(ordersQuery, function(snapshot) {
 
 async function markReady(orderId) {
   const orderRef = doc(db, "orders", orderId);
-
-  await updateDoc(orderRef, {
-    status: "Ready to Serve"
-  });
+  await updateDoc(orderRef, { status: "Ready to Serve" });
 }
 
 function getDisplaySequence(order) {
@@ -109,6 +106,64 @@ function renderOrders() {
       orderCard.classList.add("actionRequired");
     }
 
+    // Map through the array of items to group them under 1 order card safely
+    let itemsHTML = "";
+    if (order.items && Array.isArray(order.items)) {
+      itemsHTML = order.items.map(item => `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding: 4px 0; border-bottom: 1px dashed var(--line);">
+          <span>• ${item.foodName}</span>
+          <strong>x${item.quantity}</strong>
+        </div>
+      `).join("");
+    } else {
+      // Fallback for older documents in your database
+      itemsHTML = `<div>• ${order.foodName || "Unknown Item"} <strong>x${order.quantity || 1}</strong></div>`;
+    }
+
+    orderCard.innerHTML = `
+      <div class="orderCardHeader">
+        <span class="orderNumber">#${getDisplaySequence(order) || "—"}</span>
+        <span class="statusLabel ${isReady ? "statusReady" : "statusPreparing"}">${order.status}</span>
+      </div>
+      
+      <div class="orderTitle" style="margin: 12px 0; font-size: 0.95rem; color: var(--text);">
+        ${itemsHTML}
+      </div>
+
+      <div class="orderMetaGrid">
+        <div>
+          <p class="metaLabel">Total Qty</p>
+          <strong>${order.totalQuantity || order.quantity || 1}</strong>
+        </div>
+        <div>
+          <p class="metaLabel">Session</p>
+          <strong>${order.customerSessionId ? order.customerSessionId.slice(-4).toUpperCase() : "Walk-in"}</strong>
+        </div>
+      </div>
+      <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
+        ${isReady ? "Marked Ready" : "Ready to Serve"}
+      </button>
+    `;
+
+    const readyButton = orderCard.querySelector(".readyButton");
+    readyButton.addEventListener("click", async () => {
+      if (isReady) return;
+      await markReady(order.id);
+    });
+
+    ordersList.appendChild(orderCard);
+  });
+}
+
+  sortedOrders.forEach((order) => {
+    const orderCard = document.createElement("div");
+    orderCard.className = "orderCard";
+    const isReady = order.status === "Ready to Serve";
+
+    if (highlightReadyActions && !isReady) {
+      orderCard.classList.add("actionRequired");
+    }
+
     // --- FIX: Map through the array of items to group them under 1 order card ---
     let itemsHTML = "";
     if (order.items && Array.isArray(order.items)) {
@@ -167,7 +222,6 @@ function renderOrders() {
 
     const orderCard = document.createElement("article");
     orderCard.className = `orderCard ${highlightReadyActions && !isReady ? "actionFocus" : ""}`;
-
     orderCard.innerHTML = `
       <div class="orderCardTop">
         <div>
@@ -181,23 +235,17 @@ function renderOrders() {
           <p class="metaLabel">Quantity</p>
           <strong>${order.quantity}</strong>
         </div>
-        <div>
-          <p class="metaLabel">Session</p>
-          <strong>${order.customerSessionId ? order.customerSessionId.slice(-4).toUpperCase() : "Walk-in"}</strong>
-        </div>
       </div>
+      ${order.remarks ? `<p class="remarksText">Remarks: ${order.remarks}</p>` : `<p class="remarksText">Remarks: None</p>`}
       <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
         ${isReady ? "Marked Ready" : "Ready to Serve"}
       </button>
     `;
 
-    const readyButton = orderCard.querySelector(".readyButton");
-    readyButton.addEventListener("click", async () => {
-      if (isReady) {
-        return;
+    orderCard.querySelector(".readyButton").addEventListener("click", async () => {
+      if (!isReady) {
+        await markReady(order.id);
       }
-
-      await markReady(order.id);
     });
 
     ordersList.appendChild(orderCard);
@@ -212,8 +260,7 @@ liveQueueToggle.addEventListener("click", () => {
 
 sortModeToggle.addEventListener("click", () => {
   sortMode = sortMode === "sequence" ? "newest" : "sequence";
-  const title = sortMode === "sequence" ? "Sequence order" : "Newest orders first";
-  sortModeToggle.querySelector(".summaryTitle").textContent = title;
+  sortModeToggle.querySelector(".summaryTitle").textContent = sortMode === "sequence" ? "Sequence order" : "Newest orders first";
   renderOrders();
 });
 
