@@ -142,10 +142,9 @@ function renderOrders() {
         (item) => `
           <li>
             <span>
-              ${item.foodName}
+              ${item.foodName} <strong>x${Number(item.quantity || 1)}</strong>
               ${item.remarks ? `<small class="itemRemark">Remarks: ${item.remarks}</small>` : ""}
             </span>
-            <strong>x${Number(item.quantity || 1)}</strong>
           </li>
         `
       )
