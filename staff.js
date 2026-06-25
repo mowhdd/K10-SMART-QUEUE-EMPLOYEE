@@ -17,6 +17,7 @@ const sortModeValue = document.getElementById("sortModeValue");
 const readyHelperValue = document.getElementById("readyHelperValue");
 
 const ordersQuery = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+
 let allOrders = [];
 let showLiveQueueOnly = true;
 let sortMode = "sequence";
@@ -27,18 +28,36 @@ onSnapshot(ordersQuery, function(snapshot) {
     id: documentData.id,
     ...documentData.data()
   }));
+
   renderOrders();
 });
 
 async function markReady(orderId) {
   const orderRef = doc(db, "orders", orderId);
-  await updateDoc(orderRef, { status: "Ready to Serve" });
+
+  await updateDoc(orderRef, {
+    status: "Ready to Serve"
+  });
 }
 
 function getDisplaySequence(order) {
   return Number.isFinite(Number(order.dailySequence))
     ? Number(order.dailySequence)
     : null;
+}
+
+function getOrderItems(order) {
+  if (Array.isArray(order.items) && order.items.length > 0) {
+    return order.items;
+  }
+
+  return [
+    {
+      foodName: order.foodName || "Unknown item",
+      quantity: Number(order.quantity || 1),
+      remarks: order.remarks || ""
+    }
+  ];
 }
 
 function sortOrders(orders) {
@@ -74,175 +93,67 @@ function sortOrders(orders) {
 }
 
 function renderOrders() {
-  ordersList.innerHTML = "";
+  const activeOrders = allOrders.filter((order) => order.status !== "Ready to Serve");
+  const visibleOrders = showLiveQueueOnly ? activeOrders : allOrders;
+  const sortedOrders = sortOrders(visibleOrders);
 
-  const activeOrders = showLiveQueueOnly
-    ? allOrders.filter((o) => o.status !== "Ready to Serve")
-    : allOrders;
+  liveQueueValue.textContent = showLiveQueueOnly
+    ? `${activeOrders.length} active`
+    : `${allOrders.length} total shown`;
 
-  const sortedOrders = [...activeOrders].sort((a, b) => {
-    if (sortMode === "sequence") {
-      return (getDisplaySequence(a) || 0) - (getDisplaySequence(b) || 0);
-    } else {
-      const timeA = a.createdAt?.seconds || 0;
-      const timeB = b.createdAt?.seconds || 0;
-      return timeB - timeA;
-    }
-  });
+  sortModeValue.textContent = sortMode === "sequence"
+    ? "Tap for newest first"
+    : "Tap for sequence order";
 
-  liveQueueValue.textContent = `${activeOrders.filter(o => o.status !== "Ready to Serve").length} active`;
+  readyHelperValue.textContent = highlightReadyActions
+    ? `${activeOrders.length} waiting for action`
+    : "Highlighting off";
+
+  liveQueueToggle.classList.toggle("active", showLiveQueueOnly);
+  sortModeToggle.classList.toggle("active", sortMode === "sequence");
+  readyHelperToggle.classList.toggle("active", highlightReadyActions);
+  ordersList.classList.toggle("helperMode", highlightReadyActions);
 
   if (sortedOrders.length === 0) {
-    ordersList.innerHTML = `<p class="noOrdersMessage">No orders in queue.</p>`;
+    ordersList.innerHTML = `
+      <div class="emptyState">
+        <p class="eyebrow">No live orders</p>
+        <h3>${showLiveQueueOnly ? "The live queue is clear for now." : "No orders found."}</h3>
+        <p>${showLiveQueueOnly ? "New customer orders will appear here automatically." : "Try switching back to live queue mode after new orders arrive."}</p>
+      </div>
+    `;
     return;
   }
-
-  sortedOrders.forEach((order) => {
-    const orderCard = document.createElement("div");
-    orderCard.className = "orderCard";
-    const isReady = order.status === "Ready to Serve";
-
-    if (highlightReadyActions && !isReady) {
-      orderCard.classList.add("actionRequired");
-    }
-
-    // Map through the array of items to group them under 1 order card safely
-    let itemsHTML = "";
-    if (order.items && Array.isArray(order.items)) {
-      itemsHTML = order.items.map(item => `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding: 4px 0; border-bottom: 1px dashed var(--line);">
-          <span>• ${item.foodName}</span>
-          <strong>x${item.quantity}</strong>
-        </div>
-      `).join("");
-    } else {
-      // Fallback for older documents in your database
-      itemsHTML = `<div>• ${order.foodName || "Unknown Item"} <strong>x${order.quantity || 1}</strong></div>`;
-    }
-
-    orderCard.innerHTML = `
-      <div class="orderCardHeader">
-        <span class="orderNumber">#${getDisplaySequence(order) || "—"}</span>
-        <span class="statusLabel ${isReady ? "statusReady" : "statusPreparing"}">${order.status}</span>
-      </div>
-      
-      <div class="orderTitle" style="margin: 12px 0; font-size: 0.95rem; color: var(--text);">
-        ${itemsHTML}
-      </div>
-
-      <div class="orderMetaGrid">
-        <div>
-          <p class="metaLabel">Total Qty</p>
-          <strong>${order.totalQuantity || order.quantity || 1}</strong>
-        </div>
-        <div>
-          <p class="metaLabel">Session</p>
-          <strong>${order.customerSessionId ? order.customerSessionId.slice(-4).toUpperCase() : "Walk-in"}</strong>
-        </div>
-      </div>
-      <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
-        ${isReady ? "Marked Ready" : "Ready to Serve"}
-      </button>
-    `;
-
-    const readyButton = orderCard.querySelector(".readyButton");
-    readyButton.addEventListener("click", async () => {
-      if (isReady) return;
-      await markReady(order.id);
-    });
-
-    ordersList.appendChild(orderCard);
-  });
-}
-
-  sortedOrders.forEach((order) => {
-    const orderCard = document.createElement("div");
-    orderCard.className = "orderCard";
-    const isReady = order.status === "Ready to Serve";
-
-    if (highlightReadyActions && !isReady) {
-      orderCard.classList.add("actionRequired");
-    }
-
-    // --- FIX: Map through the array of items to group them under 1 order card ---
-    let itemsHTML = "";
-    if (order.items && Array.isArray(order.items)) {
-      itemsHTML = order.items.map(item => `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding: 4px 0; border-bottom: 1px dashed var(--line);">
-          <span>• ${item.foodName}</span>
-          <strong>x${item.quantity}</strong>
-        </div>
-      `).join("");
-    } else {
-      // Fallback for older orders that didn't have the array structure
-      itemsHTML = `<div>• ${order.foodName || "Unknown Item"} <strong>x${order.quantity || 1}</strong></div>`;
-    }
-    // ---------------------------------------------------------------------------
-
-    orderCard.innerHTML = `
-      <div class="orderCardHeader">
-        <span class="orderNumber">#${getDisplaySequence(order) || "—"}</span>
-        <span class="statusLabel ${isReady ? "statusReady" : "statusPreparing"}">${order.status}</span>
-      </div>
-      
-      <div class="orderTitle" style="margin: 12px 0; font-size: 0.95rem; color: var(--text);">
-        ${itemsHTML}
-      </div>
-
-      <div class="orderMetaGrid">
-        <div>
-          <p class="metaLabel">Total Qty</p>
-          <strong>${order.totalQuantity || order.quantity || 1}</strong>
-        </div>
-        <div>
-          <p class="metaLabel">Session</p>
-          <strong>${order.customerSessionId ? order.customerSessionId.slice(-4).toUpperCase() : "Walk-in"}</strong>
-        </div>
-      </div>
-      <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
-        ${isReady ? "Marked Ready" : "Ready to Serve"}
-      </button>
-    `;
-
-    const readyButton = orderCard.querySelector(".readyButton");
-    readyButton.addEventListener("click", async () => {
-      if (isReady) return;
-      await markReady(order.id);
-    });
-
-    ordersList.appendChild(orderCard);
-  });
-
 
   ordersList.innerHTML = "";
 
   sortedOrders.forEach((order) => {
     const isReady = order.status === "Ready to Serve";
     const displaySequence = getDisplaySequence(order);
-
     const orderItems = getOrderItems(order);
 
-const totalQuantity = orderItems.reduce(
-  (total, item) => total + Number(item.quantity || 0),
-  0
-);
+    const totalQuantity = orderItems.reduce(
+      (total, item) => total + Number(item.quantity || 0),
+      0
+    );
 
-const itemsHtml = orderItems
-  .map(
-    (item) => `
-      <li>
-        <span>
-          ${item.foodName}
-          ${item.remarks ? `<small class="itemRemark">Remarks: ${item.remarks}</small>` : ""}
-        </span>
-        <strong>x${Number(item.quantity || 1)}</strong>
-      </li>
-    `
-  )
+    const itemsHtml = orderItems
+      .map(
+        (item) => `
+          <li>
+            <span>
+              ${item.foodName}
+              ${item.remarks ? `<small class="itemRemark">Remarks: ${item.remarks}</small>` : ""}
+            </span>
+            <strong>x${Number(item.quantity || 1)}</strong>
+          </li>
+        `
+      )
+      .join("");
 
-  .join("");
     const orderCard = document.createElement("article");
     orderCard.className = `orderCard ${highlightReadyActions && !isReady ? "actionFocus" : ""}`;
+
     orderCard.innerHTML = `
       <div class="orderCardTop">
         <div>
@@ -251,15 +162,22 @@ const itemsHtml = orderItems
         </div>
         <span class="statusPill ${isReady ? "readyPill" : "preparingPill"}">${order.status}</span>
       </div>
+
       <ul class="orderItemsList">
-  ${itemsHtml}
-</ul>
+        ${itemsHtml}
+      </ul>
+
       <div class="orderMetaGrid">
         <div>
-          <p class="metaLabel">Quantity</p>
-          <strong>${totalQuantity}</strong>
+          <p class="metaLabel">Total Qty</p>
+          <strong>${totalQuantity || Number(order.quantity || 1)}</strong>
+        </div>
+        <div>
+          <p class="metaLabel">Session</p>
+          <strong>${order.customerSessionId ? order.customerSessionId.slice(-4).toUpperCase() : "Walk-in"}</strong>
         </div>
       </div>
+
       <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
         ${isReady ? "Marked Ready" : "Ready to Serve"}
       </button>
@@ -273,7 +191,7 @@ const itemsHtml = orderItems
 
     ordersList.appendChild(orderCard);
   });
-
+}
 
 liveQueueToggle.addEventListener("click", () => {
   showLiveQueueOnly = !showLiveQueueOnly;
