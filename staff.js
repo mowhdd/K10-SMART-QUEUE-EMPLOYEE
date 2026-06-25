@@ -220,23 +220,46 @@ function renderOrders() {
     const isReady = order.status === "Ready to Serve";
     const displaySequence = getDisplaySequence(order);
 
+    const orderItems = getOrderItems(order);
+
+const totalQuantity = orderItems.reduce(
+  (total, item) => total + Number(item.quantity || 0),
+  0
+);
+
+const itemsHtml = orderItems
+  .map(
+    (item) => `
+      <li>
+        <span>
+          ${item.foodName}
+          ${item.remarks ? `<small class="itemRemark">Remarks: ${item.remarks}</small>` : ""}
+        </span>
+        <strong>x${Number(item.quantity || 1)}</strong>
+      </li>
+    `
+  )
+
+  .join("");
     const orderCard = document.createElement("article");
     orderCard.className = `orderCard ${highlightReadyActions && !isReady ? "actionFocus" : ""}`;
     orderCard.innerHTML = `
       <div class="orderCardTop">
         <div>
           <p class="orderId">${displaySequence ? `Order #${displaySequence}` : "Order in queue"}</p>
-          <h3>${order.foodName}</h3>
+          <h3>${orderItems.length} item${orderItems.length === 1 ? "" : "s"}</h3>
         </div>
         <span class="statusPill ${isReady ? "readyPill" : "preparingPill"}">${order.status}</span>
       </div>
+      <ul class="orderItemsList">
+  ${itemsHtml}
+</ul>
       <div class="orderMetaGrid">
         <div>
           <p class="metaLabel">Quantity</p>
-          <strong>${order.quantity}</strong>
+          <strong>${totalQuantity}</strong>
         </div>
       </div>
-      ${order.remarks ? `<p class="remarksText">Remarks: ${order.remarks}</p>` : `<p class="remarksText">Remarks: None</p>`}
       <button class="primaryButton readyButton" data-order-id="${order.id}" ${isReady ? "disabled" : ""}>
         ${isReady ? "Marked Ready" : "Ready to Serve"}
       </button>
