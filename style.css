@@ -741,3 +741,10 @@ input:focus {
     font-size: 1.85rem;
   }
 }
+
+.itemRemark {
+  display: block;
+  margin-top: 4px;
+  color: var(--brand-deep);
+  font-weight: 700;
+}
