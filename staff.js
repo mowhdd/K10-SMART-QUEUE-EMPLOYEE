@@ -212,7 +212,7 @@ function renderOrders() {
 
     ordersList.appendChild(orderCard);
   });
-}
+
 
   ordersList.innerHTML = "";
 
